@@ -26,26 +26,30 @@
                 <a
                     href="https://rxdb.info/articles/javascript-vector-database.html"
                     target="_blank"
-                >Local-First Vector Database with RxDB and transformers.js</a>
+                >Local-First Vector Database with RxDB and transformers.js</a>.<br />
+                On the first run this will take very long because it has to generate the embeddings for 10k documents locally.
             </p>
             <hr>
             <input
-                id="insert-todo"
+                id="query-input"
                 class="new-todo"
-                placeholder="What needs to be done? (Enter to submit)"
+                placeholder="e.g. City in Germany"
+                value="city in germany"
                 autofocus
-            >
+            />
+            <button id="query-button">Search</button>
+            <hr>
+            </hr>
+            <div id="query-string"></div>
+            <hr>
+            </hr>
+            <hr>
+            </hr>
         </header>
         <section class="main">
-            <input
-                id="toggle-all"
-                class="toggle-all"
-                type="checkbox"
-            >
-            <label for="toggle-all">Mark all as complete</label>
             <ul
-                class="todo-list"
-                id="todo-list"
+                class="list"
+                id="list"
             >
 
             </ul>
@@ -59,10 +63,6 @@
                         <a>Completed</a>
                     </li> -->
                 </ul>
-                <button
-                    class="clear-completed"
-                    id="clear-completed"
-                >Clear completed</button>
             </footer>
         </section>
     </section>

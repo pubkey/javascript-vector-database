@@ -1,12 +1,12 @@
 import { randomCouchString } from "rxdb/plugins/core";
 
 
-let workers: Promise<Worker>[];
+let workers: Worker[];
 export function getWorkers() {
     if (!workers) {
         workers = new Array(navigator.hardwareConcurrency)
             .fill(0)
-            .map(async () => new Worker(new URL("worker.js", import.meta.url)));
+            .map(() => new Worker(new URL("worker.js", import.meta.url)));
     }
     return workers;
 }
@@ -14,7 +14,7 @@ export function getWorkers() {
 
 
 let t = 0;
-export async function getWorker() {
+export function getWorker() {
     const worker = getWorkers()[t];
     if (!worker) {
         t = 0;
@@ -25,9 +25,11 @@ export async function getWorker() {
     return worker;
 }
 
-export async function getVectorFromTextWithWorker(text: string[]): Promise<number[]> {
-    const worker = await getWorker();
-    const id = randomCouchString(6);
+
+let lastId = 0;
+export async function getVectorFromTextWithWorker(text: string): Promise<number[]> {
+    const worker = getWorker();
+    const id = (lastId++) + '';
     return new Promise<number[]>(res => {
         const listener = (ev: any) => {
             if (ev.data.id === id) {
