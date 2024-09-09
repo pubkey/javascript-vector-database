@@ -94,8 +94,6 @@ export async function vectorSearchIndexSimilarity(vectorCollection: RxCollection
             docReads = docReads + docsAfter.length;
         })
     );
-    console.log('aaaaaaaaaaaa DONE ' + performance.now());
-
     const docsWithDistance = Array.from(candidates).map(doc => {
         const distance = euclideanDistance((doc as any).embedding, searchEmbedding);
         return {

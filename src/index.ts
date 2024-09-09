@@ -48,64 +48,71 @@ async function run() {
         importData(true);
     }
     async function submit(searchString: string) {
-        if (!state.importDone) {
-            alert('Before you can run a query, click on one of the import buttons above to import some data.');
-            return;
+        try {
+            if (!state.importDone) {
+                alert('Before you can run a query, click on one of the import buttons above to import some data.');
+                return;
+            }
+            $queryString.innerHTML = 'QUERY STRING: ' + searchString;
+            $list.innerHTML = '';
+            // const searchString = randomOfArray(WIKI_DATA).body;
+            time('START create search embedding ' + performance.now());
+            const searchEmbedding = await getVectorFromTextWithWorker(searchString);
+            time('DONE create search embedding ' + performance.now());
+
+
+            // TEST embedding creation speed per model
+            // for (const modelName of modelNames) {
+            //     let embeddingTime = 0;
+            //     const testEmbeddingAmount = 1;
+            //     const searchEmbeddingPrepare = await getVectorFromText(randomOfArray(WIKI_DATA).body, modelName);
+            //     for (let i = 0; i < testEmbeddingAmount; i++) {
+            //         time('START create search embedding model: ' + modelName);
+            //         const searchEmbedding2 = await getVectorFromText(randomOfArray(WIKI_DATA).body, modelName);
+            //         embeddingTime += time('DONE create search embedding2 mode: ' + modelName);
+            //     }
+            //     console.log('embeddingTime(' + testEmbeddingAmount + ') ' + modelName + ' AVG: ' + Math.round(embeddingTime / testEmbeddingAmount));
+            //     console.log('vector size ' + modelName + ': ' + searchEmbeddingPrepare.length);
+            // }
+
+            // time('START SEARCH vectorSearchFullScan ' + performance.now());
+            // const results = await vectorSearchFullScan(db.vectors, searchEmbedding);
+            // const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
+            // console.dir({ results });
+
+            time('START SEARCH vectorSearchIndexRange ' + performance.now());
+            const results = await vectorSearchIndexRange(db.vectors, searchEmbedding);
+            const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
+            console.dir({ results });
+
+            // time('START SEARCH vectorSearchIndexSimilarity ' + performance.now());
+            // const result = await (db.vectors as any).vectorSearchIndexSimilarity(searchEmbedding);
+            // const resultSearchRangeTime = time('DONE SEARCH vectorSearchIndexSimilarity ' + performance.now());
+            // console.dir({ result });
+
+            // console.dir({
+            //     queryResultFullScan: resultFullScan.result.map((d: any) => d.distance),
+            //     queryResultFullScanTime,
+            //     resultSearchRange: result.result.map((d: any) => d.distance),
+            //     resultSearchRangedocReads: result.docReads,
+            //     resultSearchRangeTime,
+            //     resultLimit: resultLimit.result.map((d: any) => d.distance),
+            //     resultLimitDocReads: resultLimit.docReads,
+            //     resultLimitTime
+            // });
+
+            const sourceDocs = await db.items.findByIds(results.result.map((r: any) => r.doc.primary)).exec();
+            $list.innerHTML = results.result.map((r: any, idx) => {
+                const doc = getFromMapOrThrow(sourceDocs, r.doc.primary);
+                const textHtml = textToHtml(doc.body, idx + 1);
+                return textHtml;
+            }).join('');
+        } catch (err: any) {
+            // this makes mobile debugging easier
+            alert(err.message);
+            throw err;
         }
-        $queryString.innerHTML = 'QUERY STRING: ' + searchString;
-        $list.innerHTML = '';
-        // const searchString = randomOfArray(WIKI_DATA).body;
-        time('START create search embedding ' + performance.now());
-        const searchEmbedding = await getVectorFromTextWithWorker(searchString);
-        time('DONE create search embedding ' + performance.now());
 
-
-        // TEST embedding creation speed per model
-        // for (const modelName of modelNames) {
-        //     let embeddingTime = 0;
-        //     const testEmbeddingAmount = 1;
-        //     const searchEmbeddingPrepare = await getVectorFromText(randomOfArray(WIKI_DATA).body, modelName);
-        //     for (let i = 0; i < testEmbeddingAmount; i++) {
-        //         time('START create search embedding model: ' + modelName);
-        //         const searchEmbedding2 = await getVectorFromText(randomOfArray(WIKI_DATA).body, modelName);
-        //         embeddingTime += time('DONE create search embedding2 mode: ' + modelName);
-        //     }
-        //     console.log('embeddingTime(' + testEmbeddingAmount + ') ' + modelName + ' AVG: ' + Math.round(embeddingTime / testEmbeddingAmount));
-        //     console.log('vector size ' + modelName + ': ' + searchEmbeddingPrepare.length);
-        // }
-
-        // time('START SEARCH vectorSearchFullScan ' + performance.now());
-        // const results = await vectorSearchFullScan(db.vectors, searchEmbedding);
-        // const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
-        // console.dir({ results });
-
-        time('START SEARCH vectorSearchIndexRange ' + performance.now());
-        const results = await vectorSearchIndexRange(db.vectors, searchEmbedding);
-        const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
-        console.dir({ results });
-
-        // time('START SEARCH vectorSearchIndexSimilarity ' + performance.now());
-        // const result = await (db.vectors as any).vectorSearchIndexSimilarity(searchEmbedding);
-        // const resultSearchRangeTime = time('DONE SEARCH vectorSearchIndexSimilarity ' + performance.now());
-        // console.dir({ result });
-
-        // console.dir({
-        //     queryResultFullScan: resultFullScan.result.map((d: any) => d.distance),
-        //     queryResultFullScanTime,
-        //     resultSearchRange: result.result.map((d: any) => d.distance),
-        //     resultSearchRangedocReads: result.docReads,
-        //     resultSearchRangeTime,
-        //     resultLimit: resultLimit.result.map((d: any) => d.distance),
-        //     resultLimitDocReads: resultLimit.docReads,
-        //     resultLimitTime
-        // });
-
-        const sourceDocs = await db.items.findByIds(results.result.map((r: any) => r.doc.primary)).exec();
-        $list.innerHTML = results.result.map((r: any, idx) => {
-            const doc = getFromMapOrThrow(sourceDocs, r.doc.primary);
-            const textHtml = textToHtml(doc.body, idx + 1);
-            return textHtml;
-        }).join('');
     }
 }
 run();
