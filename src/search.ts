@@ -57,7 +57,6 @@ export async function vectorSearchIndexSimilarity(vectorCollection: RxCollection
     const docsPerIndexSide = 100;
     const candidates = new Set<RxDocument>();
     let docReads = 0;
-    console.log('aaaaaaaaaaaa ' + performance.now());
     await Promise.all(
         new Array(5).fill(0).map(async (_, i) => {
             const distanceToIndex = euclideanDistance(INDEX_VECTORS[i], searchEmbedding);

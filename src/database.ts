@@ -4,7 +4,8 @@ import {
     RxDocument,
     RxState,
     addRxPlugin,
-    createRxDatabase
+    createRxDatabase,
+    ensureNotFalsy
 
 } from "rxdb/plugins/core";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
@@ -172,6 +173,9 @@ export async function getState() {
 }
 
 export async function importData(importWithEmbeddings: boolean) {
+    const $importLoading = ensureNotFalsy(document.getElementById('import-loading'));
+    $importLoading.style.display = 'block';
+
     console.log('importData(' + importWithEmbeddings + ') START');
     const db = await getDatabase();
     const state = await getState();
@@ -211,6 +215,8 @@ export async function importData(importWithEmbeddings: boolean) {
     }
     console.log('importData(' + importWithEmbeddings + ') DONE');
     await state.set('importDone', () => true);
+    $importLoading.style.display = 'none';
+
 }
 
 // TODO import from rxdb
