@@ -110,46 +110,6 @@ export async function getDatabase() {
                 }
             }
         });
-
-
-        const pipeline = await db.items.addPipeline({
-            identifier: 'my-embeddings-pipeline',
-            destination: db.vectors,
-            batchSize: navigator.hardwareConcurrency,
-            // batchSize: 10,
-            handler: async (docs: RxDocument<any>[]) => {
-                console.log('pipeline handler called with ' + docs.length + ' docs');
-                const startTime = performance.now();
-                const findById = await db.vectors.storageInstance.findDocumentsById(docs.map(d => d.primary), false);
-                const vectorsAlreadyThere = new Set();
-                findById.forEach(d => vectorsAlreadyThere.add(d.id));
-
-
-                console.dir(vectorsAlreadyThere);
-
-                console.log('pipeline handler called with ' + docs.length + ' docs 1');
-                await Promise.all(docs.map(async (doc, i) => {
-                    if (vectorsAlreadyThere.has(doc.primary)) {
-                        console.log('skip');
-                        return;
-                    }
-                    const embedding = await getVectorFromTextWithWorker(doc.body);
-                    const docData: any = { id: doc.primary, embedding };
-                    new Array(5).fill(0).map((_, idx) => {
-                        const indexValue = euclideanDistance(INDEX_VECTORS[idx], embedding);
-                        docData['idx' + idx] = indexNrToString(indexValue);
-                    });
-                    console.log('pipeline handler called with ' + docs.length + ' docs 2');
-                    await db.vectors.upsert(docData);
-                    console.log('pipeline handler called with ' + docs.length + ' docs 3');
-                }));
-                const time = performance.now() - startTime;
-                console.log('batch(' + docs.length + ') processed in ' + time);
-            }
-        });
-
-        await pipeline.awaitIdle();
-
         return db;
     })();
 
@@ -212,6 +172,41 @@ export async function importData(importWithEmbeddings: boolean) {
             await Promise.all(Array.from(db.vectors.awaitBeforeReads).map(fn => fn()));
             console.log('IMPORTING DATA wait for pipeline DONE');
         }
+
+        const pipeline = await db.items.addPipeline({
+            identifier: 'my-embeddings-pipeline',
+            destination: db.vectors,
+            batchSize: navigator.hardwareConcurrency,
+            // batchSize: 10,
+            handler: async (docs: RxDocument<any>[]) => {
+                console.log('pipeline handler called with ' + docs.length + ' docs');
+                const startTime = performance.now();
+                const findById = await db.vectors.storageInstance.findDocumentsById(docs.map(d => d.primary), false);
+                const vectorsAlreadyThere = new Set();
+                findById.forEach(d => vectorsAlreadyThere.add(d.id));
+                console.log('pipeline handler called with ' + docs.length + ' docs 1');
+                await Promise.all(docs.map(async (doc, i) => {
+                    if (vectorsAlreadyThere.has(doc.primary)) {
+                        console.log('skip');
+                        return;
+                    }
+                    const embedding = await getVectorFromTextWithWorker(doc.body);
+                    const docData: any = { id: doc.primary, embedding };
+                    new Array(5).fill(0).map((_, idx) => {
+                        const indexValue = euclideanDistance(INDEX_VECTORS[idx], embedding);
+                        docData['idx' + idx] = indexNrToString(indexValue);
+                    });
+                    console.log('pipeline handler called with ' + docs.length + ' docs 2');
+                    await db.vectors.upsert(docData);
+                    console.log('pipeline handler called with ' + docs.length + ' docs 3');
+                }));
+                const time = performance.now() - startTime;
+                console.log('batch(' + docs.length + ') processed in ' + time);
+            }
+        });
+        console.log('await pipeline idle START');
+        await pipeline.awaitIdle();
+        console.log('await pipeline idle DONE');
     }
     console.log('importData(' + importWithEmbeddings + ') DONE');
     await state.set('importDone', () => true);
