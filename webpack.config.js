@@ -68,7 +68,8 @@ module.exports = {
     },
     output: {
         filename: '[contenthash].bundle.js',
-        path: path.resolve(__dirname, 'dist'),
+        // we need to use the 'docs' folder to make it work with github pages
+        path: path.resolve(__dirname, 'docs'),
     },
     resolve: {
         extensionAlias: {
