@@ -181,9 +181,9 @@ export async function importData(importWithEmbeddings: boolean) {
     const vectorCount = await db.vectors.count().exec();
     console.log('importData(' + importWithEmbeddings + ') START 2');
     if (importWithEmbeddings) {
-        const response = await fetch('/files/items.json');
+        const response = await fetch('./files/items.json');
         const items = await response.json();
-        const embeddingsResponse = await fetch('/files/embeddings.json');
+        const embeddingsResponse = await fetch('./files/embeddings.json');
         const embeddings = await embeddingsResponse.json();
         const vectorInsertResult = await db.vectors.bulkInsert(
             embeddings
@@ -195,7 +195,7 @@ export async function importData(importWithEmbeddings: boolean) {
     } else {
         if (itemCount < 10000) {
             console.log('IMPORTING DATA START');
-            const response = await fetch('/files/items.json');
+            const response = await fetch('./files/items.json');
             const items = await response.json();
             const startTime = performance.now();
             const insertResult = await db.items.bulkInsert(
