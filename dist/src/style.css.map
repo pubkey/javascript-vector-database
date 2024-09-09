@@ -1,0 +1,1 @@
+{"version":3,"file":"src/style.css","mappings":"AAAA;IACI,UAAU;AACd","sources":["webpack://javascript-vector-database/./src/style.css"],"sourcesContent":[".list {\n    width: 90%;\n}\n"],"names":[],"sourceRoot":""}

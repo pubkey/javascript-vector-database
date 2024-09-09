@@ -1,14 +1,18 @@
 import './style.css';
-import { createDatabase, euclideanDistance, sortByObjectNumberProperty } from './database.js';
+import { getDatabase, euclideanDistance, getState, importData } from './database.js';
 import { getVectorFromTextWithWorker } from './worker-scheduler.js';
-import { ensureNotFalsy, getFromMapOrThrow, randomOfArray } from 'rxdb/plugins/core';
-import { WIKI_DATA } from './data.js';
+import { RxDatabase, ensureNotFalsy, getFromMapOrThrow, randomOfArray } from 'rxdb/plugins/core';
 import { getVectorFromText, modelNames } from './vector.js';
+import { vectorSearchFullScan, vectorSearchIndexRange } from './search.js';
 
 
 async function run() {
-    const db = await createDatabase();
 
+    const db = await getDatabase();
+    const state = await getState();
+
+    // const exported = await db.vectors.exportJSON();
+    // console.log(JSON.stringify(exported.docs.map(d => d)));
 
     let t = performance.now();
     function time(ctx: string) {
@@ -21,12 +25,33 @@ async function run() {
     const $queryInput: HTMLInputElement = ensureNotFalsy(document.getElementById('query-input')) as any;
     const $queryButton = ensureNotFalsy(document.getElementById('query-button'));
     const $queryString = ensureNotFalsy(document.getElementById('query-string'));
+    const $buttonImportPlain: HTMLButtonElement = ensureNotFalsy(document.getElementById('button-import-plain')) as any;
+    const $buttonImportEmbeddings: HTMLButtonElement = ensureNotFalsy(document.getElementById('button-import-embeddings')) as any;
     const $list = ensureNotFalsy(document.getElementById('list'));
     $queryButton.onclick = () => {
         const searchString = $queryInput.value;
         submit(searchString);
     }
+
+    if (state.importDone) {
+        $buttonImportEmbeddings.disabled = true;
+        $buttonImportPlain.disabled = true;
+    }
+    $buttonImportPlain.onclick = () => {
+        $buttonImportEmbeddings.disabled = true;
+        $buttonImportPlain.disabled = true;
+        importData(false);
+    }
+    $buttonImportEmbeddings.onclick = () => {
+        $buttonImportEmbeddings.disabled = true;
+        $buttonImportPlain.disabled = true;
+        importData(true);
+    }
     async function submit(searchString: string) {
+        if (!state.importDone) {
+            alert('Before you can run a query, click on one of the import buttons above to import some data.');
+            return;
+        }
         $queryString.innerHTML = 'QUERY STRING: ' + searchString;
         $list.innerHTML = '';
         // const searchString = randomOfArray(WIKI_DATA).body;
@@ -49,15 +74,15 @@ async function run() {
         //     console.log('vector size ' + modelName + ': ' + searchEmbeddingPrepare.length);
         // }
 
-        // time('START SEARCH vectorSearchFullScan ' + performance.now());
-        // const resultFullScan = await (db.vectors as any).vectorSearchFullScan(searchEmbedding);
-        // const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
-        // console.dir({ resultFullScan });
+        time('START SEARCH vectorSearchFullScan ' + performance.now());
+        const results = await vectorSearchFullScan(db.vectors, searchEmbedding);
+        const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
+        console.dir({ results });
 
-        time('START SEARCH vectorSearchIndexRange ' + performance.now());
-        const resultLimit = await (db.vectors as any).vectorSearchIndexRange(searchEmbedding);
-        const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
-        console.dir({ resultLimit });
+        // time('START SEARCH vectorSearchIndexRange ' + performance.now());
+        // const resultLimit = await vectorSearchIndexRange(db.vectors, searchEmbedding);
+        // const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
+        // console.dir({ resultLimit });
 
         // time('START SEARCH vectorSearchIndexSimilarity ' + performance.now());
         // const result = await (db.vectors as any).vectorSearchIndexSimilarity(searchEmbedding);
@@ -75,14 +100,20 @@ async function run() {
         //     resultLimitTime
         // });
 
-        const sourceDocs = await db.items.findByIds(resultLimit.result.map((r: any) => r.doc.primary)).exec();
-        $list.innerHTML = resultLimit.result.map((r: any) => {
+        const sourceDocs = await db.items.findByIds(results.result.map((r: any) => r.doc.primary)).exec();
+        $list.innerHTML = results.result.map((r: any, idx) => {
             const doc = getFromMapOrThrow(sourceDocs, r.doc.primary);
-            return '<li>' + doc.body + '</li> <hr />';
+            const textHtml = textToHtml(doc.body, idx + 1);
+            return textHtml;
         }).join('');
     }
-
-    await submit($queryInput.value);
-
 }
 run();
+
+
+
+function textToHtml(text: string, nr: number) {
+    const title = text.split('Title:')[1].split('Content:')[0].trim();
+    const content = text.split('Content:')[1].trim();
+    return '<h3><b>' + nr + '.</b> ' + title + '</h3><p>' + content + '</p><hr />';
+}

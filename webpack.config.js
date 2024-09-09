@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TerserPlugin = require('terser-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 let mode = 'development';
 const plugins = [
@@ -15,6 +15,11 @@ const plugins = [
         template: 'src/index.html'
     }),
     new MiniCssExtractPlugin({ filename: 'src/style.css' }),
+    new CopyWebpackPlugin({
+        patterns: [
+            { from: 'files', to: 'files' }
+        ]
+    })
 ];
 if (process.env.NODE_ENV === 'disc') {
     mode = 'production';
@@ -63,7 +68,7 @@ module.exports = {
     },
     output: {
         filename: '[contenthash].bundle.js',
-        path: path.resolve(__dirname, 'docs'),
+        path: path.resolve(__dirname, 'dist'),
     },
     resolve: {
         extensionAlias: {
