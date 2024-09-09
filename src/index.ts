@@ -74,15 +74,15 @@ async function run() {
         //     console.log('vector size ' + modelName + ': ' + searchEmbeddingPrepare.length);
         // }
 
-        time('START SEARCH vectorSearchFullScan ' + performance.now());
-        const results = await vectorSearchFullScan(db.vectors, searchEmbedding);
-        const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
-        console.dir({ results });
+        // time('START SEARCH vectorSearchFullScan ' + performance.now());
+        // const results = await vectorSearchFullScan(db.vectors, searchEmbedding);
+        // const queryResultFullScanTime = time('DONE SEARCH vectorSearchFullScan ' + performance.now());
+        // console.dir({ results });
 
-        // time('START SEARCH vectorSearchIndexRange ' + performance.now());
-        // const resultLimit = await vectorSearchIndexRange(db.vectors, searchEmbedding);
-        // const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
-        // console.dir({ resultLimit });
+        time('START SEARCH vectorSearchIndexRange ' + performance.now());
+        const results = await vectorSearchIndexRange(db.vectors, searchEmbedding);
+        const resultLimitTime = time('DONE SEARCH vectorSearchIndexRange ' + performance.now());
+        console.dir({ results });
 
         // time('START SEARCH vectorSearchIndexSimilarity ' + performance.now());
         // const result = await (db.vectors as any).vectorSearchIndexSimilarity(searchEmbedding);
