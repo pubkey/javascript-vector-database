@@ -6,6 +6,7 @@ This is the demo app for the article [Local-First Vector Database with RxDB and 
 To start the project, first run `npm install` and then run `npm run dev`.
 
 
-## TODO
+## TODO (PR welcomed!)
 
-- Add some stylings (PR welcomed!)
+- Add some stylings
+- Add button to reset the database
